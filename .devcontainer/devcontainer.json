@@ -2,21 +2,17 @@
   "name": "mtta",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
-    "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
   },
-  "forwardPorts": [5173, 3000, 8000],
+  "forwardPorts": [5173, 3000],
   "portsAttributes": {
     "5173": { "label": "Vite", "onAutoForward": "openBrowser" },
-    "3000": { "label": "Next/Node", "onAutoForward": "openBrowser" },
-    "8000": { "label": "API", "onAutoForward": "openBrowser" }
+    "3000": { "label": "Next/Node", "onAutoForward": "openBrowser" }
   },
   "onCreateCommand": "corepack enable || true",
-  "postCreateCommand": "(cd client && pnpm i || npm i) && (cd server && pip install -r requirements.txt || true)",
+  "postCreateCommand": "(cd client && pnpm i || npm i)",
   "postStartCommand": "(cd client && (pnpm run dev -- --host || npm run dev -- --host))",
   "customizations": {
-    "vscode": {
-      "extensions": ["esbenp.prettier-vscode","dbaeumer.vscode-eslint","ms-python.python"]
-    }
+    "vscode": { "extensions": ["esbenp.prettier-vscode","dbaeumer.vscode-eslint"] }
   }
 }
