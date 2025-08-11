@@ -73,6 +73,8 @@ interface Tournament {
   endDate: string;
   location: string;
   status: 'registration' | 'ongoing' | 'completed';
+  minAge?: number;
+  maxAge?: number;
 }
 
 interface Match {
