@@ -40,6 +40,8 @@ interface Tournament {
   organizerId: string;
   backgroundImageUrl?: string;
   regulationDocumentUrl?: string;
+  minAge?: number;
+  maxAge?: number;
   minRating?: string;
   maxRating?: string;
 }
@@ -634,6 +636,29 @@ export default function TournamentPage() {
                           <div>
                             <span className="text-sm text-gray-300">Дээд зэрэг: </span>
                             <Badge className="bg-green-600 text-white">{tournament.maxRating}</Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {(tournament.minAge || tournament.maxAge) && (
+                  <>
+                    <Separator className="bg-gray-700" />
+                    <div>
+                      <h4 className="font-semibold mb-2 text-white">Насны хязгаар</h4>
+                      <div className="flex gap-4">
+                        {tournament.minAge && (
+                          <div>
+                            <span className="text-sm text-gray-300">Доод нас: </span>
+                            <Badge className="bg-green-600 text-white">{tournament.minAge}</Badge>
+                          </div>
+                        )}
+                        {tournament.maxAge && (
+                          <div>
+                            <span className="text-sm text-gray-300">Дээд нас: </span>
+                            <Badge className="bg-green-600 text-white">{tournament.maxAge}</Badge>
                           </div>
                         )}
                       </div>

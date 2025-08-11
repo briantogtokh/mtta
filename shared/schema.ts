@@ -165,6 +165,8 @@ export const tournaments = pgTable("tournaments", {
   // New fields for enhanced tournament features
   backgroundImageUrl: varchar("background_image_url"), // Background image for tournament
   regulationDocumentUrl: varchar("regulation_document_url"), // Tournament regulation document
+  minAge: integer("min_age"), // Minimum age requirement
+  maxAge: integer("max_age"), // Maximum age requirement
   minRating: varchar("min_rating"), // Minimum rating/rank requirement (e.g., "Beginner", "Intermediate")
   maxRating: varchar("max_rating"), // Maximum rating/rank requirement
   createdAt: timestamp("created_at").defaultNow(),

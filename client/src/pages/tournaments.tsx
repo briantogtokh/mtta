@@ -41,6 +41,8 @@ interface TournamentData {
   categories?: string[];
   eventInfoUrl?: string;
   ticketUrl?: string;
+  minAge?: number;
+  maxAge?: number;
 }
 
 interface CountdownTime {

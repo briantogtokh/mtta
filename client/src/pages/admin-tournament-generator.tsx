@@ -41,6 +41,8 @@ const tournamentSchema = z.object({
   requirements: z.string().optional(),
   backgroundImageUrl: z.string().optional(),
   regulationDocumentUrl: z.string().optional(),
+  minAge: z.number().min(0, "Нас 0-ээс бага байж болохгүй").optional(),
+  maxAge: z.number().min(0, "Нас 0-ээс бага байж болохгүй").optional(),
   minRating: z.string().optional(),
   maxRating: z.string().optional(),
   isPublished: z.boolean().default(false),
@@ -109,6 +111,8 @@ export default function AdminTournamentGenerator() {
       requirements: "",
       backgroundImageUrl: "",
       regulationDocumentUrl: "",
+      minAge: undefined,
+      maxAge: undefined,
       minRating: "none",
       maxRating: "none",
       isPublished: false,
@@ -167,6 +171,8 @@ export default function AdminTournamentGenerator() {
       ...data,
       richDescription: richDescription,
       participationTypes: [...data.participationTypes, ...customParticipationTypes],
+      minAge: data.minAge ?? null,
+      maxAge: data.maxAge ?? null,
       minRating: data.minRating === "none" ? null : parseInt(data.minRating) || null,
       maxRating: data.maxRating === "none" ? null : parseInt(data.maxRating) || null,
     };
@@ -485,6 +491,55 @@ export default function AdminTournamentGenerator() {
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Age Restrictions */}
+                <div>
+                  <Label className="text-sm font-medium mb-4 block">Насны хязгаарлалт</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="minAge"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Хамгийн бага нас</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? parseInt(e.target.value) : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="maxAge"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Хамгийн их нас</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              value={field.value ?? ''}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value ? parseInt(e.target.value) : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}

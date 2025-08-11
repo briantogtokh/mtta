@@ -18,6 +18,8 @@ interface Tournament {
   status: string;
   prize?: string;
   createdAt: string;
+  minAge?: number;
+  maxAge?: number;
 }
 
 export default function AdminTournaments() {
