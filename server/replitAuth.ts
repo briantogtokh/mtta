@@ -1,6 +1,6 @@
+// server/replitAuth.ts
 import * as client from "openid-client";
 import { Strategy, type VerifyFunction } from "openid-client/passport";
-
 import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
@@ -8,18 +8,30 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
-if (!process.env.REPLIT_DOMAINS) {
+const SKIP_AUTH = /^(1|true|yes)$/i.test(process.env.SKIP_AUTH ?? "");
+
+// REPLIT_DOMАINS зөвхөн auth асаалттай үед шаардана
+const DOMAINS = (process.env.REPLIT_DOMAINS ?? "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+
+if (!SKIP_AUTH && DOMAINS.length === 0) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
+}
+
+if (!process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET is required");
 }
 
 const getOidcConfig = memoize(
   async () => {
-    return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
-    );
+    if (SKIP_AUTH) throw new Error("OIDC config requested while SKIP_AUTH=1");
+    const issuer = new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc");
+    const replId = process.env.REPL_ID!;
+    return await client.discovery(issuer, replId);
   },
-  { maxAge: 3600 * 1000 }
+  { maxAge: 60 * 60 * 1000 }
 );
 
 export function getSession() {
@@ -27,10 +39,15 @@ export function getSession() {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true,      // dev дээр автоматаар үүсгэнэ
     ttl: sessionTtl,
     tableName: "sessions",
   });
+
+  // Codespaces HTTPS тул secure cookie OK
+  const secureCookie =
+    !!process.env.CODESPACES || /^(1|true)$/i.test(process.env.FORCE_SECURE_COOKIE ?? "1");
+
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -38,7 +55,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: secureCookie,
+      sameSite: "lax",
       maxAge: sessionTtl,
     },
   });
@@ -54,9 +72,7 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
-async function upsertUser(
-  claims: any,
-) {
+async function upsertUser(claims: any) {
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
@@ -69,6 +85,14 @@ async function upsertUser(
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
+
+  if (SKIP_AUTH) {
+    // Dev: OIDC бүрэн алгасна
+    app.get("/api/login", (_req, res) => res.redirect("/"));
+    app.get("/api/logout", (_req, res) => res.redirect("/"));
+    return;
+  }
+
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -78,14 +102,13 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
+    const user: any = {};
     updateUserSession(user, tokens);
     await upsertUser(tokens.claims());
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  for (const domain of DOMAINS) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
@@ -93,7 +116,7 @@ export async function setupAuth(app: Express) {
         scope: "openid email profile offline_access",
         callbackURL: `https://${domain}/api/callback`,
       },
-      verify,
+      verify
     );
     passport.use(strategy);
   }
@@ -128,30 +151,26 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if (SKIP_AUTH) return next();
+
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated?.() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
-    return next();
-  }
+  if (now <= user.expires_at) return next();
 
   const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+  if (!refreshToken) return res.status(401).json({ message: "Unauthorized" });
 
   try {
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
     return next();
-  } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+  } catch {
+    return res.status(401).json({ message: "Unauthorized" });
   }
 };
