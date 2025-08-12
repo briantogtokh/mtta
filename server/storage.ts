@@ -14,6 +14,7 @@ import {
   tournamentResults,
   homepageSliders,
   sponsors,
+  champions,
   federationMembers,
   branches,
   tournamentTeams,
@@ -45,6 +46,8 @@ import {
   type InsertHomepageSlider,
   type Sponsor,
   type InsertSponsor,
+  type Champion,
+  type InsertChampion,
   type FederationMember,
   type InsertFederationMember,
   type Branch,
@@ -120,6 +123,12 @@ export interface IStorage {
   createFederationMember(member: InsertFederationMember): Promise<FederationMember>;
   updateFederationMember(id: string, member: Partial<InsertFederationMember>): Promise<FederationMember | undefined>;
   deleteFederationMember(id: string): Promise<boolean>;
+
+  // Champion operations
+  getChampions(): Promise<Champion[]>;
+  createChampion(champion: InsertChampion): Promise<Champion>;
+  updateChampion(id: string, champion: Partial<InsertChampion>): Promise<Champion | undefined>;
+  deleteChampion(id: string): Promise<boolean>;
 
   // Tournament operations
   getTournament(id: string): Promise<Tournament | undefined>;
@@ -632,6 +641,30 @@ export class DatabaseStorage implements IStorage {
 
   async deleteFederationMember(id: string): Promise<boolean> {
     const result = await db.delete(federationMembers).where(eq(federationMembers.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Champion operations
+  async getChampions(): Promise<Champion[]> {
+    return await db.select().from(champions).orderBy(desc(champions.year));
+  }
+
+  async createChampion(championData: InsertChampion): Promise<Champion> {
+    const [champion] = await db.insert(champions).values(championData).returning();
+    return champion;
+  }
+
+  async updateChampion(id: string, championData: Partial<InsertChampion>): Promise<Champion | undefined> {
+    const [champion] = await db
+      .update(champions)
+      .set(championData)
+      .where(eq(champions.id, id))
+      .returning();
+    return champion;
+  }
+
+  async deleteChampion(id: string): Promise<boolean> {
+    const result = await db.delete(champions).where(eq(champions.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 

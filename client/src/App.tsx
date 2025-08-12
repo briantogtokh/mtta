@@ -31,6 +31,7 @@ import AboutPage from "@/pages/about";
 import BranchesPage from "@/pages/branches";
 import BranchDetailPage from "@/pages/branch-detail";
 import NationalTeamPage from "@/pages/national-team";
+import ChampionsPage from "@/pages/champions";
 import { useAuth } from "@/hooks/useAuth";
 
 function Router() {
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/branches/:id" component={BranchDetailPage} />
       <Route path="/branches" component={BranchesPage} />
       <Route path="/national-team" component={NationalTeamPage} />
+      <Route path="/champions" component={ChampionsPage} />
       <Route path="/about" component={AboutPage} />
       <Route path="/" component={Home} />
       {!isLoading && isAuthenticated && (

@@ -53,6 +53,7 @@ export default function Navigation() {
             { href: "/about#members", label: "Холбооны гишүүд" },
           ],
         },
+        { href: "/champions", label: "Үе үеийн аваргууд" },
         { href: "/branches", label: "Салбар холбоод" },
         { href: "/national-team", label: "Үндэсний шигшээ" },
       ],
