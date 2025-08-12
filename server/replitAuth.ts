@@ -89,7 +89,9 @@ export async function setupAuth(app: Express) {
   if (SKIP_AUTH) {
     // Dev: OIDC бүрэн алгасна
     app.get("/api/login", (_req, res) => res.redirect("/"));
-    app.get("/api/logout", (_req, res) => res.redirect("/"));
+    app.get("/api/logout", (req, res) => {
+      req.session.destroy(() => res.redirect("/"));
+    });
     return;
   }
 
@@ -140,12 +142,14 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
+      req.session.destroy(() => {
+        res.redirect(
+          client.buildEndSessionUrl(config, {
+            client_id: process.env.REPL_ID!,
+            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+          }).href
+        );
+      });
     });
   });
 }
