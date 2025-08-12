@@ -468,7 +468,16 @@ export const insertSponsorSchema = createInsertSchema(sponsors).omit({
   updatedAt: true,
 });
 
-export const insertBranchSchema = createInsertSchema(branches).omit({
+// Branch validation schema
+export const insertBranchSchema = createInsertSchema(branches, {
+  // Ensure a non-empty location is provided
+  location: z.string().min(1, "Байршил заавал шаардлагатай"),
+  // Optional text fields
+  leader: z.string().optional(),
+  boardMembers: z.string().optional(),
+  address: z.string().optional(),
+  activities: z.string().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
