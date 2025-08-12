@@ -340,6 +340,17 @@ export const sponsors = pgTable("sponsors", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Branch associations table
+export const branches = pgTable("branches", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  location: varchar("location").notNull(), // Байршил
+  leader: varchar("leader"), // Тэргүүлэгч
+  boardMembers: text("board_members"), // Тэргүүлэгч гишүүд
+  address: text("address"), // Хаяг
+  activities: text("activities"), // Үйл ажиллагаа
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   player: one(players, {
@@ -457,6 +468,11 @@ export const insertSponsorSchema = createInsertSchema(sponsors).omit({
   updatedAt: true,
 });
 
+export const insertBranchSchema = createInsertSchema(branches).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertMembershipSchema = createInsertSchema(memberships).omit({
   id: true,
   createdAt: true,
@@ -498,6 +514,8 @@ export type InsertHomepageSlider = z.infer<typeof insertHomepageSliderSchema>;
 export type HomepageSlider = typeof homepageSliders.$inferSelect;
 export type InsertSponsor = z.infer<typeof insertSponsorSchema>;
 export type Sponsor = typeof sponsors.$inferSelect;
+export type InsertBranch = z.infer<typeof insertBranchSchema>;
+export type Branch = typeof branches.$inferSelect;
 export type TournamentParticipant = typeof tournamentParticipants.$inferSelect;
 export type InsertTournamentParticipant = typeof tournamentParticipants.$inferInsert;
 export type TournamentResults = typeof tournamentResults.$inferSelect;

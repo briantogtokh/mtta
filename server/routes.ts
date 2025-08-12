@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertPlayerSchema, insertClubSchema, insertTournamentSchema, insertMatchSchema, insertNewsSchema, insertMembershipSchema, insertHomepageSliderSchema, insertSponsorSchema } from "@shared/schema";
+import { insertPlayerSchema, insertClubSchema, insertTournamentSchema, insertMatchSchema, insertNewsSchema, insertMembershipSchema, insertHomepageSliderSchema, insertSponsorSchema, insertBranchSchema } from "@shared/schema";
 import { z } from "zod";
 
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -1051,6 +1051,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching club:", error);
       res.status(500).json({ message: "Клубын мэдээлэл авахад алдаа гарлаа" });
+    }
+  });
+
+  // Branch routes
+  app.post('/api/branches', requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Зөвхөн админ хэрэглэгч салбар холбоо нэмэх боломжтой" });
+      }
+      const branchData = insertBranchSchema.parse(req.body);
+      const branch = await storage.createBranch(branchData);
+      res.json(branch);
+    } catch (error) {
+      console.error("Error creating branch:", error);
+      res.status(400).json({ message: "Салбар холбоо үүсгэхэд алдаа гарлаа" });
+    }
+  });
+
+  app.get('/api/branches', async (req, res) => {
+    try {
+      const branches = await storage.getAllBranches();
+      res.json(branches);
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+      res.status(500).json({ message: "Салбар холбоодын жагсаалт авахад алдаа гарлаа" });
+    }
+  });
+
+  app.get('/api/branches/:id', async (req, res) => {
+    try {
+      const branch = await storage.getBranch(req.params.id);
+      if (!branch) {
+        return res.status(404).json({ message: "Салбар холбоо олдсонгүй" });
+      }
+      res.json(branch);
+    } catch (error) {
+      console.error("Error fetching branch:", error);
+      res.status(500).json({ message: "Салбар холбооны мэдээлэл авахад алдаа гарлаа" });
     }
   });
 

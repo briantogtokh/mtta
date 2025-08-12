@@ -14,6 +14,7 @@ import {
   tournamentResults,
   homepageSliders,
   sponsors,
+  branches,
   tournamentTeams,
   tournamentTeamPlayers,
   leagueMatches,
@@ -43,6 +44,8 @@ import {
   type InsertHomepageSlider,
   type Sponsor,
   type InsertSponsor,
+  type Branch,
+  type InsertBranch,
   type TournamentTeam,
   type InsertTournamentTeam,
   type TournamentTeamPlayer,
@@ -85,6 +88,11 @@ export interface IStorage {
   createClub(club: InsertClub): Promise<Club>;
   getClubsByOwner(ownerId: string): Promise<Club[]>;
   getAllClubs(): Promise<Club[]>;
+
+  // Branch operations
+  getBranch(id: string): Promise<Branch | undefined>;
+  createBranch(branch: InsertBranch): Promise<Branch>;
+  getAllBranches(): Promise<Branch[]>;
 
   // Tournament operations
   getTournament(id: string): Promise<Tournament | undefined>;
@@ -513,6 +521,21 @@ export class DatabaseStorage implements IStorage {
 
   async getAllClubs(): Promise<Club[]> {
     return await db.select().from(clubs).orderBy(clubs.name);
+  }
+
+  // Branch operations
+  async getBranch(id: string): Promise<Branch | undefined> {
+    const [branch] = await db.select().from(branches).where(eq(branches.id, id));
+    return branch;
+  }
+
+  async createBranch(branchData: InsertBranch): Promise<Branch> {
+    const [branch] = await db.insert(branches).values(branchData).returning();
+    return branch;
+  }
+
+  async getAllBranches(): Promise<Branch[]> {
+    return await db.select().from(branches).orderBy(branches.createdAt);
   }
 
   async updateClub(id: string, clubData: Partial<InsertClub>): Promise<Club | undefined> {
