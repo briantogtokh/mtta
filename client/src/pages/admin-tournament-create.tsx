@@ -182,8 +182,8 @@ export default function AdminTournamentCreate() {
     mutationFn: async (data: any) => {
       // Fix: normalize rating values and empty strings
       const normalizeRating = (value?: string) => (value && value !== "none" ? value : undefined);
-      
-      const result = await apiRequest("POST", "/api/tournaments", {
+
+      const payload = {
         ...data,
         richDescription,
         // Fix: send schedule as object, not double-stringified
@@ -194,6 +194,11 @@ export default function AdminTournamentCreate() {
         // Fix: send undefined instead of empty strings for URLs
         backgroundImageUrl: backgroundImageUrl || undefined,
         regulationDocumentUrl: regulationDocumentUrl || undefined,
+      };
+
+      const result = await apiRequest('/api/tournaments', {
+        method: 'POST',
+        body: JSON.stringify(payload),
       });
       return result;
     },
