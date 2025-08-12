@@ -340,6 +340,16 @@ export const sponsors = pgTable("sponsors", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Federation members table
+export const federationMembers = pgTable("federation_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  position: varchar("position").notNull(),
+  imageUrl: varchar("image_url"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Branch associations table
 export const branches = pgTable("branches", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -468,6 +478,11 @@ export const insertSponsorSchema = createInsertSchema(sponsors).omit({
   updatedAt: true,
 });
 
+export const insertFederationMemberSchema = createInsertSchema(federationMembers).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Branch validation schema
 export const insertBranchSchema = createInsertSchema(branches, {
   // Ensure a non-empty location is provided
@@ -523,6 +538,8 @@ export type InsertHomepageSlider = z.infer<typeof insertHomepageSliderSchema>;
 export type HomepageSlider = typeof homepageSliders.$inferSelect;
 export type InsertSponsor = z.infer<typeof insertSponsorSchema>;
 export type Sponsor = typeof sponsors.$inferSelect;
+export type InsertFederationMember = z.infer<typeof insertFederationMemberSchema>;
+export type FederationMember = typeof federationMembers.$inferSelect;
 export type InsertBranch = z.infer<typeof insertBranchSchema>;
 export type Branch = typeof branches.$inferSelect;
 export type TournamentParticipant = typeof tournamentParticipants.$inferSelect;

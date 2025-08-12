@@ -14,6 +14,7 @@ import {
   tournamentResults,
   homepageSliders,
   sponsors,
+  federationMembers,
   branches,
   tournamentTeams,
   tournamentTeamPlayers,
@@ -44,6 +45,8 @@ import {
   type InsertHomepageSlider,
   type Sponsor,
   type InsertSponsor,
+  type FederationMember,
+  type InsertFederationMember,
   type Branch,
   type InsertBranch,
   type TournamentTeam,
@@ -93,6 +96,12 @@ export interface IStorage {
   getBranch(id: string): Promise<Branch | undefined>;
   createBranch(branch: InsertBranch): Promise<Branch>;
   getAllBranches(): Promise<Branch[]>;
+
+  // Federation member operations
+  getFederationMembers(): Promise<FederationMember[]>;
+  createFederationMember(member: InsertFederationMember): Promise<FederationMember>;
+  updateFederationMember(id: string, member: Partial<InsertFederationMember>): Promise<FederationMember | undefined>;
+  deleteFederationMember(id: string): Promise<boolean>;
 
   // Tournament operations
   getTournament(id: string): Promise<Tournament | undefined>;
@@ -536,6 +545,30 @@ export class DatabaseStorage implements IStorage {
 
   async getAllBranches(): Promise<Branch[]> {
     return await db.select().from(branches).orderBy(branches.createdAt);
+  }
+
+  // Federation member operations
+  async getFederationMembers(): Promise<FederationMember[]> {
+    return await db.select().from(federationMembers).orderBy(federationMembers.sortOrder);
+  }
+
+  async createFederationMember(memberData: InsertFederationMember): Promise<FederationMember> {
+    const [member] = await db.insert(federationMembers).values(memberData).returning();
+    return member;
+  }
+
+  async updateFederationMember(id: string, memberData: Partial<InsertFederationMember>): Promise<FederationMember | undefined> {
+    const [member] = await db
+      .update(federationMembers)
+      .set(memberData)
+      .where(eq(federationMembers.id, id))
+      .returning();
+    return member;
+  }
+
+  async deleteFederationMember(id: string): Promise<boolean> {
+    const result = await db.delete(federationMembers).where(eq(federationMembers.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async updateClub(id: string, clubData: Partial<InsertClub>): Promise<Club | undefined> {

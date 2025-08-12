@@ -50,7 +50,7 @@ export default function Navigation() {
             { href: "/about#history", label: "Танилцуулга" },
             { href: "/about#goals", label: "Бидний зорилго" },
             { href: "/about#management", label: "Түүхэн замнал" },
-            { href: "/about#leadership", label: "Захирлуудын зөвлөл" },
+            { href: "/about#members", label: "Холбооны гишүүд" },
           ],
         },
         { href: "/branches", label: "Салбар холбоод" },

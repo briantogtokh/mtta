@@ -7,13 +7,59 @@ import { History, Target, Users, Award } from "lucide-react";
 import Navigation from "@/components/navigation";
 import PageWithLoading from "@/components/PageWithLoading";
 
+const MembersList: React.FC = () => {
+  const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const res = await fetch('/api/federation-members');
+        const data = await res.json();
+        setMembers(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error('Failed to load members', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMembers();
+  }, []);
+
+  if (loading) {
+    return <div>Ачааллаж байна...</div>;
+  }
+
+  if (!members.length) {
+    return <div>Гишүүн олдсонгүй</div>;
+  }
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      {members.map((member) => (
+        <div key={member.id} className="bg-gray-800 p-6 rounded-lg text-center">
+          {member.imageUrl && (
+            <img
+              src={member.imageUrl}
+              alt={member.name}
+              className="w-24 h-24 rounded-full mx-auto mb-3 object-cover"
+            />
+          )}
+          <h3 className="text-xl font-semibold text-white">{member.name}</h3>
+          <p className="text-green-400">{member.position}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const AboutPage = () => {
   const [activeTab, setActiveTab] = useState("history");
 
   // Handle URL hash changes to switch tabs
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
-    if (hash && ['history', 'goals', 'management', 'leadership'].includes(hash)) {
+    if (hash && ['history', 'goals', 'management', 'members'].includes(hash)) {
       setActiveTab(hash);
     }
   }, []);
@@ -68,13 +114,13 @@ const AboutPage = () => {
                 <span className="hidden sm:inline">Түүхэн замнал</span>
                 <span className="sm:hidden">Түүх</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="leadership" 
+              <TabsTrigger
+                value="members"
                 className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-gray-300 text-xs md:text-sm px-1 md:px-3"
               >
                 <Award className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                <span className="hidden sm:inline">Захирлуудын зөвлөл</span>
-                <span className="sm:hidden">Зөвлөл</span>
+                <span className="hidden sm:inline">Холбооны гишүүд</span>
+                <span className="sm:hidden">Гишүүд</span>
               </TabsTrigger>
             </TabsList>
 
@@ -269,110 +315,20 @@ const AboutPage = () => {
               </Card>
             </TabsContent>
 
-            {/* Leadership Tab */}
-            <TabsContent value="leadership" id="leadership">
+            {/* Members Tab */}
+            <TabsContent value="members" id="members">
               <Card className="card-dark">
                 <CardHeader>
                   <CardTitle className="text-2xl text-white flex items-center">
                     <Award className="w-6 h-6 mr-3 text-green-400" />
-                    Захирлуудын зөвлөл
+                    Холбооны гишүүд
                   </CardTitle>
                   <CardDescription className="text-gray-300">
-                    Холбооны удирдлагын бүрэлдэхүүн болон үүрэг хариуцлага
+                    Холбоонд харьяалагдах гишүүдийн мэдээлэл
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-gray-300">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-gray-800 p-6 rounded-lg">
-                      <div className="text-center mb-4">
-                        <div className="w-20 h-20 bg-green-600 rounded-full mx-auto mb-3 flex items-center justify-center">
-                          <Users className="w-8 h-8 text-white" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-white">Б.Болдбаатар</h3>
-                        <p className="text-green-400">Ерөнхий дарга</p>
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li>• Холбооны ерөнхий удирдлага</li>
-                        <li>• Стратегийн чиглэл тодорхойлолт</li>
-                        <li>• Олон улсын харилцаа</li>
-                      </ul>
-                    </div>
-
-                    <div className="bg-gray-800 p-6 rounded-lg">
-                      <div className="text-center mb-4">
-                        <div className="w-20 h-20 bg-green-600 rounded-full mx-auto mb-3 flex items-center justify-center">
-                          <Target className="w-8 h-8 text-white" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-white">Г.Ганбаатар</h3>
-                        <p className="text-green-400">Гүйцэтгэх захирал</p>
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li>• Өдөр тутмын үйл ажиллагаа</li>
-                        <li>• Тэмцээн зохион байгуулалт</li>
-                        <li>• Клубуудтай хамтын ажиллагаа</li>
-                      </ul>
-                    </div>
-
-                    <div className="bg-gray-800 p-6 rounded-lg">
-                      <div className="text-center mb-4">
-                        <div className="w-20 h-20 bg-green-600 rounded-full mx-auto mb-3 flex items-center justify-center">
-                          <History className="w-8 h-8 text-white" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-white">С.Сайханбилэг</h3>
-                        <p className="text-green-400">Дэд дарга</p>
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li>• Тамирчдын хөгжлийн хөтөлбөр</li>
-                        <li>• Дасгалжуулагчдын сургалт</li>
-                        <li>• Техникийн дэмжлэг</li>
-                      </ul>
-                    </div>
-
-                    <div className="bg-gray-800 p-6 rounded-lg">
-                      <div className="text-center mb-4">
-                        <div className="w-20 h-20 bg-green-600 rounded-full mx-auto mb-3 flex items-center justify-center">
-                          <Award className="w-8 h-8 text-white" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-white">Д.Долгорсүрэн</h3>
-                        <p className="text-green-400">Нарийн бичгийн дарга</p>
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li>• Холбооны албан бичиг</li>
-                        <li>• Гишүүдийн бүртгэл</li>
-                        <li>• Мэдээллийн удирдлага</li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 bg-gray-800 p-6 rounded-lg">
-                    <h3 className="text-xl font-semibold text-white mb-4">Зөвлөлийн гишүүд</h3>
-                    <div className="grid md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <h4 className="font-semibold text-green-400 mb-2">Техникийн хэсэг</h4>
-                        <ul className="space-y-1">
-                          <li>• Б.Мөнхбат - Ахлах дасгалжуулагч</li>
-                          <li>• Т.Түмэнжаргал - Шүүгч</li>
-                          <li>• Ө.Одгэрэл - Техникийн зөвлөх</li>
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-green-400 mb-2">Удирдлагын хэсэг</h4>
-                        <ul className="space-y-1">
-                          <li>• Ж.Жавхлан - Санхүүгийн захирал</li>
-                          <li>• Р.Равданжав - Хууль зүйч</li>
-                          <li>• Н.Нарантуяа - Хөгжлийн захирал</li>
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-green-400 mb-2">Клубын төлөөлөл</h4>
-                        <ul className="space-y-1">
-                          <li>• П.Пүрэвсүрэн - УБ клуб</li>
-                          <li>• Ч.Чимэддорж - Дархан клуб</li>
-                          <li>• Б.Батбаяр - Эрдэнэт клуб</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
+                  <MembersList />
                 </CardContent>
               </Card>
             </TabsContent>
