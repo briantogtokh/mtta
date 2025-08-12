@@ -59,12 +59,15 @@ export default function Register() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterForm) => {
-      const response = await apiRequest("POST", "/api/auth/register", data);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Бүртгэлд алдаа гарлаа");
+      const response = await apiRequest("/api/register", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "Бүртгэлд алдаа гарлаа");
       }
-      return response.json();
+      return result;
     },
     onSuccess: () => {
       toast({

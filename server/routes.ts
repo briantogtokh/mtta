@@ -8,6 +8,16 @@ import { z } from "zod";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 
+export function registerBasicApi(app: Express) {
+  app.post("/api/register", (req, res) => {
+    const { email, password } = req.body as { email?: string; password?: string };
+    if (!email || !password) {
+      return res.status(400).json({ error: "email and password required" });
+    }
+    res.status(201).json({ ok: true });
+  });
+}
+
 // Extend session type to include userId
 declare module 'express-session' {
   interface SessionData {
@@ -16,6 +26,7 @@ declare module 'express-session' {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  registerBasicApi(app);
   // Auth middleware
   await setupAuth(app);
 
