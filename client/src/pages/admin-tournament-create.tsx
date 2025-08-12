@@ -176,19 +176,21 @@ export default function AdminTournamentCreate() {
   // Mutation for creating tournament
   const createTournamentMutation = useMutation({
     mutationFn: async (data: any) => {
-      await apiRequest("POST", "/api/tournaments", {
+      const result = await apiRequest("POST", "/api/tournaments", {
         ...data,
         richDescription,
         backgroundImageUrl,
         regulationDocumentUrl,
         schedule: data.schedule ? JSON.stringify({ description: data.schedule }) : null,
       });
+      return result;
     },
     onSuccess: () => {
       toast({
         title: "Амжилттай",
         description: "Тэмцээн амжилттай үүсгэгдлээ",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/tournaments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
       form.reset();
       setRichDescription("");
