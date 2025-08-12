@@ -1056,17 +1056,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Branch routes
   app.post('/api/branches', requireAuth, async (req: any, res) => {
+    const parseResult = insertBranchSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ message: "Салбар холбооны мэдээлэл буруу байна" });
+    }
+
     try {
       const user = await storage.getUser(req.session.userId);
       if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Зөвхөн админ хэрэглэгч салбар холбоо нэмэх боломжтой" });
       }
-      const branchData = insertBranchSchema.parse(req.body);
-      const branch = await storage.createBranch(branchData);
-      res.json(branch);
+      const branch = await storage.createBranch(parseResult.data);
+      res.status(201).json(branch);
     } catch (error) {
       console.error("Error creating branch:", error);
-      res.status(400).json({ message: "Салбар холбоо үүсгэхэд алдаа гарлаа" });
+      res.status(500).json({ message: "Салбар холбоо үүсгэхэд алдаа гарлаа" });
     }
   });
 
