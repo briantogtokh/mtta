@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus, Users, Shield, Building, Trophy, Calendar, Newspaper, Images, TrendingUp, Upload, Link as LinkIcon, ArrowLeft, Settings, UserPlus, Play, Zap, X } from "lucide-react";
+import { Pencil, Trash2, Plus, Users, Shield, Building, Trophy, Calendar, Newspaper, Images, TrendingUp, Upload, Link as LinkIcon, ArrowLeft, Settings, UserPlus, Play, Zap, X, GitBranch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AdminStatsDashboard from "@/components/admin-stats-dashboard";
@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [userFilter, setUserFilter] = useState("");
   const [playerFilter, setPlayerFilter] = useState("");
   const [clubFilter, setClubFilter] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -85,6 +86,11 @@ export default function AdminDashboard() {
     enabled: selectedTab === 'sponsors'
   });
 
+  const { data: branches, isLoading: branchesLoading } = useQuery({
+    queryKey: ['/api/branches'],
+    enabled: selectedTab === 'branches'
+  });
+
   // Generic mutations
   const createMutation = useMutation({
     mutationFn: async ({ endpoint, data }: { endpoint: string; data: any }) => {
@@ -96,7 +102,8 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       toast({ title: "Амжилттай үүслээ" });
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/${selectedTab}`] });
+      const key = selectedTab === 'branches' ? '/api/branches' : `/api/admin/${selectedTab}`;
+      queryClient.invalidateQueries({ queryKey: [key] });
       setIsCreateDialogOpen(false);
       setFormData({});
     },
@@ -115,7 +122,8 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       toast({ title: "Амжилттай шинэчлэгдлээ" });
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/${selectedTab}`] });
+      const key = selectedTab === 'branches' ? '/api/branches' : `/api/admin/${selectedTab}`;
+      queryClient.invalidateQueries({ queryKey: [key] });
       setEditingItem(null);
       setFormData({});
     },
@@ -130,7 +138,8 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       toast({ title: "Амжилттай устгагдлаа" });
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/${selectedTab}`] });
+      const key = selectedTab === 'branches' ? '/api/branches' : `/api/admin/${selectedTab}`;
+      queryClient.invalidateQueries({ queryKey: [key] });
     },
     onError: (error: any) => {
       toast({ title: "Алдаа гарлаа", description: error.message, variant: "destructive" });
@@ -138,17 +147,25 @@ export default function AdminDashboard() {
   });
 
   const handleCreate = () => {
+    const endpoint = selectedTab === 'branches'
+      ? '/api/branches'
+      : `/api/admin/${selectedTab}`;
     createMutation.mutate({
-      endpoint: `/api/admin/${selectedTab}`,
+      endpoint,
       data: formData
     });
   };
 
   const handleUpdate = () => {
-    const endpoint = selectedTab === 'players' 
-      ? `/api/admin/players/${editingItem.id}`
-      : `/api/admin/${selectedTab}/${editingItem.id}`;
-    
+    let endpoint;
+    if (selectedTab === 'players') {
+      endpoint = `/api/admin/players/${editingItem.id}`;
+    } else if (selectedTab === 'branches') {
+      endpoint = `/api/branches/${editingItem.id}`;
+    } else {
+      endpoint = `/api/admin/${selectedTab}/${editingItem.id}`;
+    }
+
     updateMutation.mutate({
       endpoint,
       data: formData
@@ -157,7 +174,10 @@ export default function AdminDashboard() {
 
   const handleDelete = (id: string) => {
     if (confirm("Устгахдаа итгэлтэй байна уу?")) {
-      deleteMutation.mutate(`/api/admin/${selectedTab}/${id}`);
+      const endpoint = selectedTab === 'branches'
+        ? `/api/branches/${id}`
+        : `/api/admin/${selectedTab}/${id}`;
+      deleteMutation.mutate(endpoint);
     }
   };
 
@@ -258,8 +278,16 @@ export default function AdminDashboard() {
   const openCreateDialog = () => {
     // Initialize with appropriate default values based on selected tab
     let defaultData = {};
-    
-    if (selectedTab === 'leagues') {
+
+    if (selectedTab === 'branches') {
+      defaultData = {
+        location: '',
+        leader: '',
+        boardMembers: '',
+        address: '',
+        activities: ''
+      };
+    } else if (selectedTab === 'leagues') {
       // For leagues, provide sensible default dates
       const today = new Date();
       const nextMonth = new Date(today);
@@ -514,6 +542,71 @@ export default function AdminDashboard() {
     );
   };
 
+  const renderBranchesTab = () => {
+    const filteredBranches = branches && Array.isArray(branches) ? branches.filter((branch: any) => {
+      const searchText = branchFilter.toLowerCase();
+      return !searchText ||
+        branch.location?.toLowerCase().includes(searchText) ||
+        branch.leader?.toLowerCase().includes(searchText) ||
+        branch.address?.toLowerCase().includes(searchText);
+    }) : [];
+
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center gap-4">
+          <h2 className="text-2xl font-bold">Салбар холбоод</h2>
+          <div className="flex-1 max-w-sm">
+            <Input
+              placeholder="Салбар холбоо хайх..."
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+            />
+          </div>
+          <Button onClick={openCreateDialog}>
+            <Plus className="w-4 h-4 mr-2" />
+            Салбар холбоо нэмэх
+          </Button>
+        </div>
+
+        {branchesLoading ? (
+          <div>Ачааллаж байна...</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Байршил</TableHead>
+                <TableHead>Тэргүүлэгч</TableHead>
+                <TableHead>Хаяг</TableHead>
+                <TableHead>Үйл ажиллагаа</TableHead>
+                <TableHead>Үйлдэл</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredBranches.map((branch: any) => (
+                <TableRow key={branch.id}>
+                  <TableCell>{branch.location}</TableCell>
+                  <TableCell>{branch.leader}</TableCell>
+                  <TableCell>{branch.address}</TableCell>
+                  <TableCell className="max-w-40 truncate">{branch.activities}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openEditDialog(branch)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(branch.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+    );
+  };
+
   const renderSlidersTab = () => (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -723,6 +816,52 @@ export default function AdminDashboard() {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
               </div>
+            </div>
+          </>
+        );
+
+      case 'branches':
+        return (
+          <>
+            <div>
+              <Label htmlFor="location">Байршил</Label>
+              <Input
+                id="location"
+                value={formData.location || ''}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="leader">Тэргүүлэгч</Label>
+              <Input
+                id="leader"
+                value={formData.leader || ''}
+                onChange={(e) => setFormData({ ...formData, leader: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="boardMembers">Тэргүүлэгч гишүүд</Label>
+              <Textarea
+                id="boardMembers"
+                value={formData.boardMembers || ''}
+                onChange={(e) => setFormData({ ...formData, boardMembers: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="address">Хаяг</Label>
+              <Input
+                id="address"
+                value={formData.address || ''}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="activities">Үйл ажиллагаа</Label>
+              <Textarea
+                id="activities"
+                value={formData.activities || ''}
+                onChange={(e) => setFormData({ ...formData, activities: e.target.value })}
+              />
             </div>
           </>
         );
@@ -1435,7 +1574,7 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-10">
+        <TabsList className="grid w-full grid-cols-11">
           <TabsTrigger value="stats" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             Статистик
@@ -1463,6 +1602,10 @@ export default function AdminDashboard() {
           <TabsTrigger value="teams" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             Багууд
+          </TabsTrigger>
+          <TabsTrigger value="branches" className="flex items-center gap-2">
+            <GitBranch className="w-4 h-4" />
+            Салбар холбоод
           </TabsTrigger>
           <TabsTrigger value="news" className="flex items-center gap-2">
             <Newspaper className="w-4 h-4" />
@@ -1721,6 +1864,18 @@ export default function AdminDashboard() {
                   </Table>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="branches">
+          <Card>
+            <CardHeader>
+              <CardTitle>Салбар холбоодын удирдлага</CardTitle>
+              <CardDescription>Салбар холбоодыг нэмэх, засах, устгах</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {renderBranchesTab()}
             </CardContent>
           </Card>
         </TabsContent>
