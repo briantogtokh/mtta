@@ -6,7 +6,7 @@ import TournamentTimeDisplay from "@/components/tournament-time-display";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Calendar, MapPin, Clock, ExternalLink, Ticket, Users } from "lucide-react";
+import { Trophy, Calendar, MapPin, Clock, ExternalLink, Ticket, Users, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -509,13 +509,22 @@ export default function Tournaments() {
             </div>
             
             {user && (user as any)?.role === 'admin' ? (
-              <Button 
-                className="mtta-green text-white hover:bg-mtta-green-dark"
-                onClick={() => window.location.href = '/admin/generator'}
-              >
-                <Trophy className="mr-2 h-5 w-5" />
-                Тэмцээн үүсгэх
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  className="mtta-green text-white hover:bg-mtta-green-dark"
+                  onClick={() => window.location.href = '/admin/tournament-create'}
+                >
+                  <Trophy className="mr-2 h-5 w-5" />
+                  Тэмцээн үүсгэх
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = '/admin/tournament-results'}
+                >
+                  <FileText className="mr-2 h-5 w-5" />
+                  Үр дүн оруулах
+                </Button>
+              </div>
             ) : null}
           </div>
         </div>
@@ -531,13 +540,22 @@ export default function Tournaments() {
               Одоогоор ямар нэг тэмцээн зарлагдаагүй байна.
             </p>
             {user && (user as any)?.role === 'admin' ? (
-              <Button 
-                className="mtta-green text-white hover:bg-mtta-green-dark"
-                onClick={() => window.location.href = '/admin/generator'}
-              >
-                <Trophy className="mr-2 h-5 w-5" />
-                Тэмцээн үүсгэх
-              </Button>
+              <div className="flex justify-center gap-2">
+                <Button
+                  className="mtta-green text-white hover:bg-mtta-green-dark"
+                  onClick={() => window.location.href = '/admin/tournament-create'}
+                >
+                  <Trophy className="mr-2 h-5 w-5" />
+                  Тэмцээн үүсгэх
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = '/admin/tournament-results'}
+                >
+                  <FileText className="mr-2 h-5 w-5" />
+                  Үр дүн оруулах
+                </Button>
+              </div>
             ) : null}
           </div>
         ) : (
