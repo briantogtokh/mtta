@@ -675,10 +675,15 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(tournaments)
-      .where(and(
-        eq(tournaments.status, "ongoing"),
-        sql`${tournaments.endDate} >= NOW()`
-      ))
+      .where(
+        and(
+          or(
+            eq(tournaments.status, "ongoing"),
+            eq(tournaments.status, "registration")
+          ),
+          sql`${tournaments.endDate} >= NOW()`
+        )
+      )
       .orderBy(tournaments.startDate);
   }
 
