@@ -29,6 +29,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import TournamentManagement from "@/pages/tournament-management";
 import AboutPage from "@/pages/about";
 import BranchesPage from "@/pages/branches";
+import BranchDetailPage from "@/pages/branch-detail";
 import NationalTeamPage from "@/pages/national-team";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/leagues/:id" component={LeagueDetails} />
       <Route path="/news/:id" component={NewsDetail} />
       <Route path="/news" component={News} />
+      <Route path="/branches/:id" component={BranchDetailPage} />
       <Route path="/branches" component={BranchesPage} />
       <Route path="/national-team" component={NationalTeamPage} />
       <Route path="/about" component={AboutPage} />
