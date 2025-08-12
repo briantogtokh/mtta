@@ -46,32 +46,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password, 
         role 
       } = req.body;
-      
+
       // Validate required fields
       if (!firstName || !lastName) {
         return res.status(400).json({ message: "Нэр, овог заавал оруулна уу" });
       }
-      
+
       if (!gender || !['male', 'female', 'other'].includes(gender)) {
         return res.status(400).json({ message: "Хүйс заавал сонгоно уу" });
       }
-      
+
       if (!dateOfBirth) {
         return res.status(400).json({ message: "Төрсөн огноо заавал оруулна уу" });
       }
-      
+
       if (!phone) {
         return res.status(400).json({ message: "Утасны дугаар заавал оруулна уу" });
       }
-      
+
       if (!email) {
         return res.status(400).json({ message: "И-мэйл хаяг заавал оруулна уу" });
       }
-      
+
       if (!clubAffiliation) {
         return res.status(400).json({ message: "Клуб эсвэл тоглодог газрын мэдээлэл заавал оруулна уу" });
       }
-      
+
       if (!password) {
         return res.status(400).json({ message: "Нууц үг заавал оруулна уу" });
       }
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existingUserByEmail) {
         return res.status(400).json({ message: "Энэ и-мэйл хаяг аль хэдийн бүртгэгдсэн байна" });
       }
-      
+
       // Only check phone if it's provided
       if (phone) {
         const existingUserByPhone = await storage.getUserByPhone(phone);
@@ -109,11 +109,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role,
         password
       };
-      
+
       console.log("Creating user with data:", userData);
-      
+
       const user = await storage.createSimpleUser(userData);
-      
+
       // Remove password from response
       const { password: _, ...userResponse } = user;
       res.json({ message: "Амжилттай бүртгэгдлээ", user: userResponse });
@@ -126,11 +126,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { contact, password } = req.body;
-      
+
       if (!contact) {
         return res.status(400).json({ message: "И-мэйл эсвэл утасны дугаар оруулна уу" });
       }
-      
+
       if (!password) {
         return res.status(400).json({ message: "Нууц үг оруулна уу" });
       }
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = contact.includes('@') 
         ? await storage.getUserByEmail(contact)
         : await storage.getUserByPhone(contact);
-      
+
       if (!user) {
         return res.status(404).json({ message: "Хэрэглэгч олдсонгүй" });
       }
@@ -157,7 +157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set user session (simple session management)
       (req as any).session.userId = user.id;
       (req as any).session.user = user;
-      
+
       // Remove password from response
       const { password: _, ...userResponse } = user;
       res.json({ message: "Амжилттай нэвтэрлээ", user: userResponse });
@@ -183,18 +183,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.session.userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       const user = await storage.getUser(req.session.userId);
       if (!user) {
         return res.status(404).json({ message: "Хэрэглэгч олдсонгүй" });
       }
-      
+
       // Get player profile if user is a player
       let player = null;
       if (user.role === 'player') {
         player = await storage.getPlayerByUserId(user.id);
       }
-      
+
       res.json({ ...user, player });
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -217,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(404).json({ message: "Хэрэглэгч олдсонгүй" });
       }
-      
+
       // Get player data if user is a player
       let playerStats = null;
       if (user.role === 'player') {
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('No player data found for user:', user.id);
         }
       }
-      
+
       // Format the response to match the profile interface
       const profileData = {
         id: user.id,
@@ -259,12 +259,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           memberNumber: playerStats.memberNumber
         } : null
       };
-      
+
       console.log('Profile response - province:', user.province);
       console.log('Profile response - city:', user.city);
       console.log('Profile response - playerStats:', playerStats);
       console.log('Full user data from DB:', user);
-      
+
       res.json(profileData);
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       console.log('Profile update request body:', JSON.stringify(req.body, null, 2));
-      
+
       const {
         name,
         email,
@@ -297,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         membershipActive,
         membershipAmount
       } = req.body;
-      
+
       console.log('Extracted province:', province);
       console.log('Extracted city:', city);
 
@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         membershipActive,
         membershipAmount
       });
-      
+
       console.log('Updated user result:', updatedUser);
 
       if (!updatedUser) {
@@ -379,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clubAffiliation, 
         currentPassword 
       } = req.body;
-      
+
       // Get current user
       const currentUser = await storage.getUser(req.session.userId);
       if (!currentUser) {
@@ -404,23 +404,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!firstName || !lastName) {
         return res.status(400).json({ message: "Нэр, овог заавал оруулна уу" });
       }
-      
+
       if (!gender || !['male', 'female', 'other'].includes(gender)) {
         return res.status(400).json({ message: "Хүйс заавал сонгоно уу" });
       }
-      
+
       if (!dateOfBirth) {
         return res.status(400).json({ message: "Төрсөн огноо заавал оруулна уу" });
       }
-      
+
       if (!phone) {
         return res.status(400).json({ message: "Утасны дугаар заавал оруулна уу" });
       }
-      
+
       if (!email) {
         return res.status(400).json({ message: "И-мэйл хаяг заавал оруулна уу" });
       }
-      
+
       if (!clubAffiliation) {
         return res.status(400).json({ message: "Клуб эсвэл тоглодог газрын мэдээлэл заавал оруулна уу" });
       }
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Энэ и-мэйл хаяг аль хэдийн бүртгэгдсэн байна" });
         }
       }
-      
+
       if (phone !== currentUser.phone) {
         const existingUserByPhone = await storage.getUserByPhone(phone);
         if (existingUserByPhone && existingUserByPhone.id !== currentUser.id) {
@@ -450,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         clubAffiliation,
       });
-      
+
       // Remove password from response
       const { password: _, ...userResponse } = updatedUser;
       res.json({ message: "Мэдээлэл амжилттай шинэчлэгдлээ", user: userResponse });
@@ -608,21 +608,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/tournaments', requireAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      
+
       // Get player data if user is a player
       let player = null;
       if (req.session.user?.role === 'player') {
         player = await storage.getPlayerByUserId(userId);
       }
-      
+
       if (!player) {
         return res.json([]);
       }
-      
+
       // Get tournaments this player is registered for
       const registrations = await storage.getPlayerTournamentRegistrations(player.id);
       const tournaments = [];
-      
+
       for (const reg of registrations) {
         const tournament = await storage.getTournament(reg.tournamentId);
         if (tournament) {
@@ -637,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       res.json(tournaments);
     } catch (error) {
       console.error("Error fetching user tournaments:", error);
@@ -648,20 +648,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/matches', requireAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      
+
       // Get player data if user is a player
       let player = null;
       if (req.session.user?.role === 'player') {
         player = await storage.getPlayerByUserId(userId);
       }
-      
+
       if (!player) {
         return res.json([]);
       }
-      
+
       // Get player matches with tournament and opponent information
       const matches = await storage.getPlayerMatchesWithDetails(player.id);
-      
+
       res.json(matches);
     } catch (error) {
       console.error("Error fetching user matches:", error);
@@ -672,20 +672,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/teams', requireAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      
+
       // Get player data if user is a player
       let player = null;
       if (req.session.user?.role === 'player') {
         player = await storage.getPlayerByUserId(userId);
       }
-      
+
       if (!player) {
         return res.json([]);
       }
-      
+
       // Get teams this player is part of
       const teams = await storage.getPlayerTeams(player.id);
-      
+
       res.json(teams);
     } catch (error) {
       console.error("Error fetching user teams:", error);
@@ -697,20 +697,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/medals', requireAuth, async (req: any, res) => {
     try {
       const userId = req.session.userId;
-      
+
       // Get player data if user is a player
       let player = null;
       if (req.session.user?.role === 'player') {
         player = await storage.getPlayerByUserId(userId);
       }
-      
+
       if (!player) {
         return res.json([]);
       }
-      
+
       // Get medals this player has earned
       const medals = await storage.getPlayerMedals(player.id);
-      
+
       res.json(medals);
     } catch (error) {
       console.error("Error fetching user medals:", error);
@@ -723,10 +723,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Creating tournament with data:", req.body);
       console.log("User session:", req.session.userId);
-      
+
       const user = await storage.getUser(req.session.userId);
       if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Зөвхөн админ хэрэглэгч тэмцээн үүсгэх боломжтой" });
+      }
+
+      // Process schedule data properly
+      let scheduleData = null;
+      if (req.body.schedule) {
+        if (typeof req.body.schedule === 'string') {
+          scheduleData = req.body.schedule;
+        } else if (typeof req.body.schedule === 'object' && req.body.schedule.description) {
+          scheduleData = req.body.schedule.description;
+        }
       }
 
       const tournamentData = insertTournamentSchema.parse({
@@ -738,17 +748,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entryFee: req.body.entryFee ? req.body.entryFee.toString() : "0",
         maxParticipants: req.body.maxParticipants || 32,
         isPublished: req.body.isPublished || false,
+        schedule: scheduleData,
+        // Handle rating fields properly
+        minRating: req.body.minRating || null,
+        maxRating: req.body.maxRating || null,
+        // Handle URL fields properly
+        backgroundImageUrl: req.body.backgroundImageUrl || null,
+        regulationDocumentUrl: req.body.regulationDocumentUrl || null,
       });
-      
+
       console.log("Parsed tournament data:", tournamentData);
-      
+
       const tournament = await storage.createTournament(tournamentData);
       console.log("Created tournament:", tournament);
-      
+
       res.json(tournament);
     } catch (error) {
       console.error("Error creating tournament:", error);
-      res.status(400).json({ message: "Тэмцээн үүсгэхэд алдаа гарлаа", error: error instanceof Error ? error.message : String(error) });
+      if (error instanceof Error) {
+        res.status(400).json({ 
+          message: "Тэмцээн үүсгэхэд алдаа гарлаа", 
+          error: error.message,
+          details: error.stack 
+        });
+      } else {
+        res.status(400).json({ 
+          message: "Тэмцээн үүсгэхэд алдаа гарлаа", 
+          error: String(error) 
+        });
+      }
     }
   });
 
@@ -804,14 +832,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/objects/finalize', async (req, res) => {
     try {
       const { fileURL, isPublic } = req.body;
-      
+
       if (!fileURL) {
         return res.status(400).json({ error: "fileURL шаардлагатай" });
       }
 
       const objectStorageService = new ObjectStorageService();
       const objectPath = objectStorageService.normalizeObjectEntityPath(fileURL);
-      
+
       // For public files, no ACL needed as they're accessible to everyone
       // For private files, set basic ACL policy
       if (!isPublic) {
@@ -947,12 +975,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/players/:id', async (req, res) => {
     try {
       let player = await storage.getPlayerWithUser(req.params.id);
-      
+
       // If not found by player ID, try to find by user ID
       if (!player) {
         player = await storage.getPlayerByUserId(req.params.id);
       }
-      
+
       // If still not found, try to create a player profile for this user ID
       if (!player) {
         try {
@@ -962,7 +990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Тоглогч олдсонгүй" });
         }
       }
-      
+
       res.json(player);
     } catch (error) {
       console.error("Error fetching player:", error);
@@ -1127,12 +1155,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
-      
+
       // Check if user is admin or club owner
       if (user?.role !== 'admin' && user?.role !== 'club_owner') {
         return res.status(403).json({ message: "Зөвхөн админ болон клубын эзэд тэмцээн үүсгэх боломжтой" });
       }
-      
+
       const tournamentData = insertTournamentSchema.parse({ ...req.body, organizerId: userId });
       console.log("Creating tournament with data:", tournamentData);
       const tournament = await storage.createTournament(tournamentData);
@@ -1252,7 +1280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Cache-Control': 'public, max-age=300', // 5 minutes cache
         'ETag': `news-${Date.now()}`
       });
-      
+
       const news = await storage.getPublishedNews();
       res.json(news);
     } catch (error) {
@@ -1268,7 +1296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Cache-Control': 'public, max-age=180', // 3 minutes cache
         'ETag': `latest-news-${Date.now()}`
       });
-      
+
       const latestNews = await storage.getLatestPublishedNews(5);
       res.json(latestNews);
     } catch (error) {
@@ -1284,7 +1312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'Cache-Control': 'public, max-age=600', // 10 minutes cache for individual articles
         'ETag': `news-${req.params.id}-${Date.now()}`
       });
-      
+
       const news = await storage.getNewsById(req.params.id);
       if (!news) {
         return res.status(404).json({ message: "Мэдээ олдсонгүй" });
@@ -1310,12 +1338,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/news/:id', isAuthenticated, async (req: any, res) => {
     try {
       const newsData = insertNewsSchema.partial().parse(req.body);
-      
+
       // Handle file upload for news image if present
       if (req.body.imageUrl && req.body.imageUrl !== '') {
         newsData.imageUrl = req.body.imageUrl;
       }
-      
+
       const updatedNews = await storage.updateNews(req.params.id, newsData);
       if (!updatedNews) {
         return res.status(404).json({ message: "Мэдээ олдсонгүй" });
@@ -1334,7 +1362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Зөвхөн админ хэрэглэгч бүх мэдээг харж болно" });
       }
-      
+
       const allNews = await storage.getAllNews();
       res.json(allNews);
     } catch (error) {
@@ -1402,7 +1430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/leagues/:id/teams', async (req, res) => {
     try {
       const teams = await storage.getLeagueTeams(req.params.id);
-      
+
       // Transform teams to include stats (wins, losses, points, matchesPlayed)
       const teamsWithStats = teams.map(team => ({
         id: team.id,
@@ -1415,7 +1443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         colorTheme: '#22C55E', // Default color
         players: team.players,
       }));
-      
+
       res.json(teamsWithStats);
     } catch (error) {
       console.error("Error fetching league teams:", error);
@@ -1460,7 +1488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!user) {
           return res.status(400).json({ message: "Хэрэглэгч олдсонгүй" });
         }
-        
+
         player = await storage.createPlayer({
           userId: userId,
           dateOfBirth: new Date(), // Default date, user can update later
@@ -1506,7 +1534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tournamentId } = req.params;
       const userId = req.session.userId;
-      
+
       const player = await storage.getPlayerByUserId(userId);
       if (!player) {
         return res.json({ registered: false });
@@ -1532,7 +1560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Object storage endpoints for tournament file uploads
+  // Object storage routes for file uploads
   app.post("/api/objects/upload", isAuthenticated, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
@@ -1616,11 +1644,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tournamentId } = req.params;
       const results = await storage.getTournamentResults(tournamentId);
-      
+
       if (!results) {
         return res.status(404).json({ message: "Tournament results not found" });
       }
-      
+
       res.json(results);
     } catch (error) {
       console.error("Error fetching tournament results:", error);
@@ -1680,7 +1708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { tournamentId } = req.params;
       await storage.publishTournamentResults(tournamentId);
-      
+
       res.json({ message: "Tournament results published successfully" });
     } catch (error) {
       console.error("Error publishing tournament results:", error);
@@ -1702,7 +1730,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ================================
   // ADMIN ROUTES FOR CRUD OPERATIONS
   // ================================
-  
+
   // Admin middleware to check if user is admin
   const isAdminRole = async (req: any, res: any, next: any) => {
     try {
@@ -1711,15 +1739,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("No session userId found in admin middleware");
         return res.status(401).json({ message: "Нэвтрэх шаардлагатай" });
       }
-      
+
       const user = await storage.getUser(req.session.userId);
       console.log("Admin middleware - User found:", user?.email, "Role:", user?.role);
-      
+
       if (!user || user.role !== 'admin') {
         console.log("User is not admin, role:", user?.role);
         return res.status(403).json({ message: "Админ эрх шаардлагатай" });
       }
-      
+
       console.log("Admin middleware - Access granted");
       next();
     } catch (error) {
@@ -1920,12 +1948,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const leagueData = { ...req.body };
       console.log("Create league data received:", JSON.stringify(leagueData, null, 2));
-      
+
       // Validate required fields
       if (!leagueData.name || !leagueData.name.trim()) {
         return res.status(400).json({ message: "Лигийн нэр заавал оруулна уу" });
       }
-      
+
       // Parse date strings into Date objects, handle empty strings
       if (leagueData.startDate && typeof leagueData.startDate === 'string' && leagueData.startDate.trim() !== '') {
         leagueData.startDate = new Date(leagueData.startDate);
@@ -1935,7 +1963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         return res.status(400).json({ message: "Эхлэх огноо заавал оруулна уу" });
       }
-      
+
       if (leagueData.endDate && typeof leagueData.endDate === 'string' && leagueData.endDate.trim() !== '') {
         leagueData.endDate = new Date(leagueData.endDate);
         if (isNaN(leagueData.endDate.getTime())) {
@@ -1944,7 +1972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         return res.status(400).json({ message: "Дуусах огноо заавал оруулна уу" });
       }
-      
+
       // Handle registrationDeadline if provided
       if (leagueData.registrationDeadline && typeof leagueData.registrationDeadline === 'string' && leagueData.registrationDeadline.trim() !== '') {
         leagueData.registrationDeadline = new Date(leagueData.registrationDeadline);
@@ -1954,9 +1982,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         delete leagueData.registrationDeadline;
       }
-      
+
       console.log("Processed create league data:", JSON.stringify(leagueData, null, 2));
-      
+
       const league = await storage.createLeague(leagueData);
       res.json(league);
     } catch (error) {
@@ -1970,9 +1998,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove readonly fields that shouldn't be updated
       const { id, createdAt, updatedAt, ...rawUpdateData } = req.body;
       const updateData = { ...rawUpdateData };
-      
+
       console.log("Update data received:", JSON.stringify(updateData, null, 2));
-      
+
       // Parse date strings into Date objects, handle empty strings and different types
       if (updateData.startDate !== undefined) {
         if (typeof updateData.startDate === 'string' && updateData.startDate.trim() !== '') {
@@ -1985,7 +2013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           delete updateData.startDate; // Remove empty/invalid date field
         }
       }
-      
+
       if (updateData.endDate !== undefined) {
         if (typeof updateData.endDate === 'string' && updateData.endDate.trim() !== '') {
           updateData.endDate = new Date(updateData.endDate);
@@ -1997,7 +2025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           delete updateData.endDate; // Remove empty/invalid date field
         }
       }
-      
+
       // Handle registrationDeadline if it exists
       if (updateData.registrationDeadline !== undefined) {
         if (typeof updateData.registrationDeadline === 'string' && updateData.registrationDeadline.trim() !== '') {
@@ -2009,9 +2037,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           delete updateData.registrationDeadline;
         }
       }
-      
+
       console.log("Processed update data:", JSON.stringify(updateData, null, 2));
-      
+
       const league = await storage.updateLeague(req.params.id, updateData);
       if (!league) {
         return res.status(404).json({ message: "Лиг олдсонгүй" });
@@ -2041,7 +2069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { leagueId } = req.params;
       const { teamId } = req.body;
-      
+
       if (!teamId) {
         return res.status(400).json({ message: "Багийн ID заавал байх ёстой" });
       }
@@ -2060,7 +2088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Add team to league (you'll need to implement this in storage)
       await storage.addTeamToLeague(leagueId, teamId);
-      
+
       res.json({ message: "Баг амжилттай лигт нэмэгдлээ" });
     } catch (error) {
       console.error("Error adding team to league:", error);
@@ -2096,15 +2124,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/admin/news/:id', requireAuth, isAdminRole, async (req, res) => {
     try {
       const updateData = { ...req.body };
-      
+
       // Remove timestamp fields that shouldn't be manually updated
       delete updateData.createdAt;
       delete updateData.updatedAt;
       delete updateData.publishedAt;
-      
+
       // Add updatedAt timestamp
       updateData.updatedAt = new Date();
-      
+
       const news = await storage.updateNews(req.params.id, updateData);
       if (!news) {
         return res.status(404).json({ message: "Мэдээ олдсонгүй" });
@@ -2132,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===================
   // OBJECT STORAGE ROUTES
   // ===================
-  
+
   // Public object serving endpoint
   app.get("/public-objects/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;
@@ -2407,7 +2435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { tournamentId } = req.params;
       const teamData = req.body;
-      
+
       // Check if this is actually a league ID by checking if it exists in leagues table
       const league = await storage.getLeagueById(tournamentId);
       if (league) {
@@ -2440,7 +2468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/tournaments/:tournamentId/teams', async (req, res) => {
     try {
       const { tournamentId } = req.params;
-      
+
       // Check if this is actually a league ID
       const league = await storage.getLeagueById(tournamentId);
       if (league) {
@@ -2535,22 +2563,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get league matches for a user (by userId, looks up player first)
   // User avatar endpoint
   app.get('/api/users/:userId/avatar', async (req, res) => {
     try {
       const { userId } = req.params;
       const user = await storage.getUser(userId);
-      
+
       if (!user || !user.profileImageUrl) {
         return res.status(404).json({ error: "Profile image not found" });
       }
-      
+
       // Handle base64 images
       if (user.profileImageUrl.startsWith('data:image/')) {
         const base64Data = user.profileImageUrl.split(',')[1];
         const mimeType = user.profileImageUrl.split(';')[0].split(':')[1];
-        
+
         const buffer = Buffer.from(base64Data, 'base64');
         res.set({
           'Content-Type': mimeType,
@@ -2559,7 +2586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         return res.send(buffer);
       }
-      
+
       // Handle URL-based images (redirect)
       res.redirect(user.profileImageUrl);
     } catch (error) {
@@ -2571,13 +2598,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/:userId/league-matches', async (req, res) => {
     try {
       const { userId } = req.params;
-      
+
       // First, find the player associated with this user
       const player = await storage.getPlayerByUserId(userId);
       if (!player) {
         return res.json([]); // Return empty array if user has no player profile
       }
-      
+
       const matches = await storage.getLeagueMatchesForPlayer(player.id);
       res.json(matches);
     } catch (error) {
@@ -2629,7 +2656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/teams', requireAuth, isAdminRole, async (req, res) => {
     try {
       const { leagueId, name, sponsorLogo, ownerName, coachName, playerIds } = req.body;
-      
+
       // Create team
       const team = await storage.createLeagueTeam(leagueId || 'default', {
         name,
@@ -2661,7 +2688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { teamId } = req.params;
       const { name, sponsorLogo, ownerName, coachName, playerIds } = req.body;
-      
+
       // Update team
       const team = await storage.updateLeagueTeam(teamId, {
         name,
@@ -2706,7 +2733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { teamId } = req.params;
       const success = await storage.deleteLeagueTeam(teamId);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Баг олдсонгүй" });
       }

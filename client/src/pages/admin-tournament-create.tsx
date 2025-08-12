@@ -25,13 +25,14 @@ const tournamentSchema = z.object({
   name: z.string().min(1, "Тэмцээний нэр заавал байх ёстой"),
   description: z.string().optional(),
   richDescription: z.string().optional(),
-  startDate: z.string().min(1, "Эхлэх огноо заавал байх ёстой"),
+  startDate: z.string().min(1, "Эхлэх огноо заавал байх ёстой")
+    .refine((date) => new Date(date) > new Date(), "Эхлэх огноо одоогоос хойш байх ёстой"),
   endDate: z.string().min(1, "Дуусах огноо заавал байх ёстой"),
   registrationDeadline: z.string().optional(),
   location: z.string().min(1, "Байршил заавал байх ёстой"),
   organizer: z.string().optional(),
-  maxParticipants: z.number().min(1, "Хамгийн багадаа 1 оролцогч байх ёстой"),
-  entryFee: z.number().min(0, "Оролцооны төлбөр 0 болон түүнээс дээш байх ёстой"),
+  maxParticipants: z.coerce.number().min(1, "Хамгийн багадаа 1 оролцогч байх ёстой"),
+  entryFee: z.coerce.number().min(0, "Оролцооны төлбөр 0 болон түүнээс дээш байх ёстой"),
   participationTypes: z.array(z.string()).min(1, "Хамгийн багадаа 1 төрөл сонгоно уу"),
   rules: z.string().optional(),
   prizes: z.string().optional(),
@@ -43,6 +44,9 @@ const tournamentSchema = z.object({
   minRating: z.string().optional(),
   maxRating: z.string().optional(),
   isPublished: z.boolean().default(false),
+}).refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+  message: "Дуусах огноо эхлэх огнооноос хойш байх ёстой",
+  path: ["endDate"],
 });
 
 const defaultParticipationTypes = [
@@ -176,12 +180,20 @@ export default function AdminTournamentCreate() {
   // Mutation for creating tournament
   const createTournamentMutation = useMutation({
     mutationFn: async (data: any) => {
+      // Fix: normalize rating values and empty strings
+      const normalizeRating = (value?: string) => (value && value !== "none" ? value : undefined);
+      
       const result = await apiRequest("POST", "/api/tournaments", {
         ...data,
         richDescription,
-        backgroundImageUrl,
-        regulationDocumentUrl,
-        schedule: data.schedule ? JSON.stringify({ description: data.schedule }) : null,
+        // Fix: send schedule as object, not double-stringified
+        schedule: data.schedule ? { description: data.schedule } : undefined,
+        // Fix: normalize rating values
+        minRating: normalizeRating(data.minRating),
+        maxRating: normalizeRating(data.maxRating),
+        // Fix: send undefined instead of empty strings for URLs
+        backgroundImageUrl: backgroundImageUrl || undefined,
+        regulationDocumentUrl: regulationDocumentUrl || undefined,
       });
       return result;
     },
@@ -230,6 +242,9 @@ export default function AdminTournamentCreate() {
 
   const removeCustomParticipationType = (type: string) => {
     setCustomParticipationTypes(customParticipationTypes.filter(t => t !== type));
+    // Fix: also remove from form state when removing custom type
+    const currentTypes = form.getValues("participationTypes");
+    form.setValue("participationTypes", currentTypes.filter(t => t !== type));
   };
 
   const allParticipationTypes = [
@@ -740,8 +755,8 @@ export default function AdminTournamentCreate() {
                           <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                             <FormControl>
                               <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
+                                checked={!!field.value}
+                                onCheckedChange={(checked) => field.onChange(Boolean(checked))}
                               />
                             </FormControl>
                             <div className="space-y-1 leading-none">
