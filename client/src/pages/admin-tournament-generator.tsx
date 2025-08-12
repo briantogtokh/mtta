@@ -136,7 +136,6 @@ export default function AdminTournamentGenerator() {
 
   const createTournament = useMutation({
     mutationFn: async (data: any) => {
-<<<<<<< HEAD
       // Fix: schedule is double-stringified
       const payload = {
         ...data,
@@ -148,13 +147,10 @@ export default function AdminTournamentGenerator() {
         backgroundImageUrl: data.backgroundImageUrl === "" ? null : data.backgroundImageUrl,
         regulationDocumentUrl: data.regulationDocumentUrl === "" ? null : data.regulationDocumentUrl,
       };
-      return apiRequest('POST', '/api/tournaments', payload);
-=======
       return apiRequest('/api/tournaments', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
->>>>>>> origin/replit-agent
     },
     onSuccess: () => {
       toast({
