@@ -60,6 +60,24 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, or } from "drizzle-orm";
+import fs from "node:fs/promises";
+import path from "node:path";
+
+const USERS_FILE = path.join(process.cwd(), "users_temp.json");
+const dbEnabled = !!process.env.DATABASE_URL;
+
+async function readUsersFile() {
+  try {
+    const data = await fs.readFile(USERS_FILE, "utf8");
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeUsersFile(users: any[]) {
+  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
+}
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -222,39 +240,72 @@ export class DatabaseStorage implements IStorage {
 
   // Simple auth operations
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    if (dbEnabled) {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user;
+    }
+    const data = await readUsersFile();
+    return data.find((u: any) => u.email === email);
   }
 
   async getUserByPhone(phone: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.phone, phone));
-    return user;
+    if (dbEnabled) {
+      const [user] = await db.select().from(users).where(eq(users.phone, phone));
+      return user;
+    }
+    const data = await readUsersFile();
+    return data.find((u: any) => u.phone === phone);
   }
 
   async getUserById(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    if (dbEnabled) {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    }
+    const data = await readUsersFile();
+    return data.find((u: any) => u.id === id);
   }
 
   async createSimpleUser(userData: any): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        email: userData.email,
-        phone: userData.phone,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        gender: userData.gender,
-        dateOfBirth: userData.dateOfBirth,
-        clubAffiliation: userData.clubAffiliation,
-        password: userData.password,
-        role: userData.role,
-        profileImageUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
+    if (dbEnabled) {
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          email: userData.email,
+          phone: userData.phone,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          gender: userData.gender,
+          dateOfBirth: userData.dateOfBirth,
+          clubAffiliation: userData.clubAffiliation,
+          password: userData.password,
+          role: userData.role,
+          profileImageUrl: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      return user;
+    }
+    const usersData = await readUsersFile();
+    const user = {
+      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      email: userData.email,
+      phone: userData.phone,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      gender: userData.gender,
+      dateOfBirth: userData.dateOfBirth,
+      clubAffiliation: userData.clubAffiliation,
+      password: userData.password,
+      role: userData.role,
+      profileImageUrl: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as any;
+    usersData.push(user);
+    await writeUsersFile(usersData);
     return user;
   }
 
@@ -284,19 +335,32 @@ export class DatabaseStorage implements IStorage {
     if (userData.membershipActive !== undefined) updateData.membershipActive = userData.membershipActive;
     if (userData.membershipAmount !== undefined) updateData.membershipAmount = userData.membershipAmount;
 
-    const [user] = await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
+    if (dbEnabled) {
+      const [user] = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, userId))
+        .returning();
+      return user;
+    }
+    const usersData = await readUsersFile();
+    const index = usersData.findIndex((u: any) => u.id === userId);
+    if (index === -1) {
+      throw new Error("User not found");
+    }
+    usersData[index] = { ...usersData[index], ...updateData };
+    await writeUsersFile(usersData);
+    return usersData[index];
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .orderBy(users.firstName, users.lastName);
+    if (dbEnabled) {
+      return await db
+        .select()
+        .from(users)
+        .orderBy(users.firstName, users.lastName);
+    }
+    return await readUsersFile();
   }
 
   // Player operations
