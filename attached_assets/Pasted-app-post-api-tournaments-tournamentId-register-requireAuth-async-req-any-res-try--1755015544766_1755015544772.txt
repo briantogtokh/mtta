@@ -1,0 +1,162 @@
+app.post('/api/tournaments/:tournamentId/register', requireAuth, async (req: any, res) => {
+  try {
+    const { tournamentId } = req.params;
+    const { participationType } = req.body;
+    const userId = req.session.userId;
+
+    // Get or create player profile for the user
+    let player = await storage.getPlayerByUserId(userId);
+    if (!player) {
+      // Auto-create a basic player profile for the user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(400).json({ message: "Хэрэглэгч олдсонгүй" });
+      }
+      
+      player = await storage.createPlayer({
+        userId: userId,
+        dateOfBirth: new Date(),
+        rank: "Шинэ тоглогч"
+      });
+    }
+
+    // Check if already registered
+    const existingRegistration = await storage.getTournamentRegistration(tournamentId, player.id);
+    if (existingRegistration) {
+      return res.status(400).json({ message: "Тэмцээнд аль хэдийн бүртгүүлсэн байна" });
+    }
+
+    const registration = await storage.registerForTournament({
+      tournamentId,
+      playerId: player.id,
+      participationType: participationType || "singles"
+    });
+
+    res.json({ message: "Амжилттай бүртгүүллээ", registration });
+  } catch (error) {
+    console.error("Tournament registration error:", error);
+    res.status(500).json({ message: "Бүртгүүлэхэд алдаа гарлаа" });
+  }
+});
+// Upload URL endpoint
+app.post("/api/objects/upload", requireAuth, async (req, res) => {
+  const objectStorageService = new ObjectStorageService();
+  const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+  res.json({ uploadURL });
+});
+
+// Finalize upload and set ACL
+app.put("/api/objects/finalize", requireAuth, async (req, res) => {
+  if (!req.body.fileURL) {
+    return res.status(400).json({ error: "fileURL is required" });
+  }
+
+  const userId = req.session.userId;
+  try {
+    const objectStorageService = new ObjectStorageService();
+    const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
+      req.body.fileURL,
+      {
+        owner: userId,
+        visibility: req.body.isPublic ? "public" : "private",
+      },
+    );
+
+    res.status(200).json({
+      objectPath: objectPath,
+    });
+  } catch (error) {
+    console.error("Error finalizing file upload:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+// This function should exist in storage.ts
+async createTournament(tournamentData: InsertTournament): Promise<Tournament> {
+  const [tournament] = await this.db
+    .insert(tournaments)
+    .values(tournamentData)
+    .returning();
+  return tournament;
+}
+// Tournament creation endpoint
+app.post('/api/tournaments', requireAuth, async (req: any, res) => {
+  try {
+    console.log("Creating tournament with data:", req.body);
+    console.log("User session:", req.session.userId);
+    
+    const user = await storage.getUser(req.session.userId);
+    if (!user || user.role !== 'admin') {
+      return res.status(403).json({ message: "Зөвхөн админ хэрэглэгч тэмцээн үүсгэх боломжтой" });
+    }
+
+    const tournamentData = insertTournamentSchema.parse({
+      ...req.body,
+      organizerId: req.session.userId,
+      startDate: new Date(req.body.startDate),
+      endDate: new Date(req.body.endDate),
+      registrationDeadline: req.body.registrationDeadline ? new Date(req.body.registrationDeadline) : null,
+      entryFee: req.body.entryFee ? req.body.entryFee.toString() : "0",
+      maxParticipants: req.body.maxParticipants || 32,
+      isPublished: req.body.isPublished || false,
+    });
+    
+    console.log("Parsed tournament data:", tournamentData);
+    
+    const tournament = await storage.createTournament(tournamentData);
+    console.log("Created tournament:", tournament);
+    
+    res.json(tournament);
+  } catch (error) {
+    console.error("Error creating tournament:", error);
+    res.status(400).json({ message: "Тэмцээн үүсгэхэд алдаа гарлаа", error: error instanceof Error ? error.message : String(error) });
+  }
+});
+export const tournaments = pgTable("tournaments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  richDescription: text("rich_description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  registrationDeadline: timestamp("registration_deadline"),
+  location: varchar("location"),
+  organizer: varchar("organizer"),
+  maxParticipants: integer("max_participants"),
+  entryFee: decimal("entry_fee", { precision: 10, scale: 2 }),
+  status: tournamentStatusEnum("status").default("registration"),
+  participationTypes: text("participation_types").array(),
+  rules: text("rules"),
+  prizes: text("prizes"),
+  contactInfo: text("contact_info"),
+  schedule: text("schedule"),
+  requirements: text("requirements"),
+  isPublished: boolean("is_published").default(false),
+  organizerId: varchar("organizer_id").references(() => users.id).notNull(),
+  clubId: varchar("club_id").references(() => clubs.id),
+  backgroundImageUrl: varchar("background_image_url"),
+  regulationDocumentUrl: varchar("regulation_document_url"),
+  minAge: integer("min_age"),
+  maxAge: integer("max_age"),
+  minRating: varchar("min_rating"),
+  maxRating: varchar("max_rating"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTournamentSchema = createInsertSchema(tournaments).omit({
+  id: true,
+  createdAt: true,
+});
+// Key features from admin-tournament-generator.tsx:
+- Basic tournament information form
+- URL-based media uploads
+- Age and rating restrictions
+- Participation type selection
+- Simpler validation
+// Key features from admin-tournament-create.tsx:
+- Rich text editor for detailed descriptions
+- File upload for background images and regulation documents
+- Participation type management (singles, doubles, mixed, team, custom)
+- Rating and age restrictions
+- Preview mode
+- Comprehensive form validation with Zod schema
