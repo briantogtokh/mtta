@@ -86,6 +86,11 @@ export default function AdminDashboard() {
     enabled: selectedTab === 'sponsors'
   });
 
+  const { data: federationMembers, isLoading: federationMembersLoading } = useQuery({
+    queryKey: ['/api/admin/federation-members'],
+    enabled: selectedTab === 'federation-members'
+  });
+
   const { data: branches, isLoading: branchesLoading } = useQuery({
     queryKey: ['/api/branches'],
     enabled: selectedTab === 'branches'
@@ -711,6 +716,62 @@ export default function AdminDashboard() {
                       <Pencil className="w-4 h-4" />
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDelete(sponsor.id)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )) : null}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  );
+
+  const renderFederationMembersTab = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Холбооны гишүүдийн удирдлага</h2>
+        <Button onClick={openCreateDialog}>
+          <Plus className="w-4 h-4 mr-2" />
+          Гишүүн нэмэх
+        </Button>
+      </div>
+
+      {federationMembersLoading ? (
+        <div>Ачааллаж байна...</div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Нэр</TableHead>
+              <TableHead>Албан тушаал</TableHead>
+              <TableHead>Зураг</TableHead>
+              <TableHead>Үйлдэл</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {federationMembers && Array.isArray(federationMembers) ? federationMembers.map((member: any) => (
+              <TableRow key={member.id}>
+                <TableCell>{member.name}</TableCell>
+                <TableCell>{member.position}</TableCell>
+                <TableCell>
+                  {member.imageUrl ? (
+                    <img
+                      src={member.imageUrl}
+                      alt={member.name}
+                      className="w-12 h-12 object-cover rounded-full mx-auto"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-gray-200 rounded-full" />
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openEditDialog(member)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(member.id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -1551,6 +1612,60 @@ export default function AdminDashboard() {
           </>
         );
 
+      case 'federation-members':
+        return (
+          <>
+            <div>
+              <Label htmlFor="name">Нэр</Label>
+              <Input
+                id="name"
+                value={formData.name || ''}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="position">Албан тушаал</Label>
+              <Input
+                id="position"
+                value={formData.position || ''}
+                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Зураг
+              </Label>
+              <div className="space-y-2">
+                <ObjectUploader
+                  maxNumberOfFiles={1}
+                  maxFileSize={5 * 1024 * 1024}
+                  onGetUploadParameters={async () => {
+                    const response = await apiRequest('/api/objects/upload', { method: 'POST' });
+                    const data = await response.json() as { uploadURL: string };
+                    return { method: 'PUT' as const, url: data.uploadURL };
+                  }}
+                  onFileUpload={async (uploadedFileUrl) => {
+                    try {
+                      setFormData({ ...formData, imageUrl: uploadedFileUrl });
+                    } catch (error) {
+                      console.error('Error uploading image:', error);
+                      toast({ title: 'Алдаа', description: 'Зураг хуулахад алдаа гарлаа', variant: 'destructive' });
+                    }
+                  }}
+                />
+                {formData.imageUrl && (
+                  <img
+                    src={formData.imageUrl}
+                    alt="Preview"
+                    className="w-24 h-24 object-cover rounded-full"
+                  />
+                )}
+              </div>
+            </div>
+          </>
+        );
+
       default:
         return <div>Форм боломжгүй</div>;
     }
@@ -1619,6 +1734,10 @@ export default function AdminDashboard() {
             <Zap className="w-4 h-4" />
             Ивээн тэтгэгчид
           </TabsTrigger>
+          <TabsTrigger value="federation-members" className="flex items-center gap-2">
+            <Shield className="w-4 h-4" />
+            Холбооны гишүүд
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -1677,6 +1796,18 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               {renderSponsorsTab()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="federation-members">
+          <Card>
+            <CardHeader>
+              <CardTitle>Холбооны гишүүдийн удирдлага</CardTitle>
+              <CardDescription>Гишүүдийн мэдээллийг нэмэх, засах, устгах</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {renderFederationMembersTab()}
             </CardContent>
           </Card>
         </TabsContent>

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertPlayerSchema, insertClubSchema, insertTournamentSchema, insertMatchSchema, insertNewsSchema, insertMembershipSchema, insertHomepageSliderSchema, insertSponsorSchema, insertBranchSchema } from "@shared/schema";
+import { insertPlayerSchema, insertClubSchema, insertTournamentSchema, insertMatchSchema, insertNewsSchema, insertMembershipSchema, insertHomepageSliderSchema, insertSponsorSchema, insertFederationMemberSchema, insertBranchSchema } from "@shared/schema";
 import { z } from "zod";
 
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
@@ -2267,6 +2267,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching active sliders:", error);
       res.status(500).json({ message: "Идэвхтэй слайдерууд авахад алдаа гарлаа" });
+    }
+  });
+
+  // Federation members routes
+  app.get('/api/federation-members', async (req, res) => {
+    try {
+      const members = await storage.getFederationMembers();
+      res.json(members);
+    } catch (error) {
+      console.error("Error fetching federation members:", error);
+      res.status(500).json({ message: "Холбооны гишүүд авахад алдаа гарлаа" });
+    }
+  });
+
+  app.get('/api/admin/federation-members', requireAuth, isAdminRole, async (req, res) => {
+    try {
+      const members = await storage.getFederationMembers();
+      res.json(members);
+    } catch (error) {
+      console.error("Error fetching federation members:", error);
+      res.status(500).json({ message: "Холбооны гишүүд авахад алдаа гарлаа" });
+    }
+  });
+
+  app.post('/api/admin/federation-members', requireAuth, isAdminRole, async (req, res) => {
+    try {
+      const memberData = insertFederationMemberSchema.parse(req.body);
+      const member = await storage.createFederationMember(memberData);
+      res.status(201).json(member);
+    } catch (error) {
+      console.error("Error creating federation member:", error);
+      res.status(400).json({ message: "Гишүүн үүсгэхэд алдаа гарлаа" });
+    }
+  });
+
+  app.put('/api/admin/federation-members/:id', requireAuth, isAdminRole, async (req, res) => {
+    try {
+      const updateData = insertFederationMemberSchema.partial().parse(req.body);
+      const member = await storage.updateFederationMember(req.params.id, updateData);
+      if (!member) {
+        return res.status(404).json({ message: "Гишүүн олдсонгүй" });
+      }
+      res.json(member);
+    } catch (error) {
+      console.error("Error updating federation member:", error);
+      res.status(400).json({ message: "Гишүүн засварлахад алдаа гарлаа" });
+    }
+  });
+
+  app.delete('/api/admin/federation-members/:id', requireAuth, isAdminRole, async (req, res) => {
+    try {
+      const success = await storage.deleteFederationMember(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Гишүүн олдсонгүй" });
+      }
+      res.json({ message: "Гишүүн амжилттай устгагдлаа" });
+    } catch (error) {
+      console.error("Error deleting federation member:", error);
+      res.status(400).json({ message: "Гишүүн устгахад алдаа гарлаа" });
     }
   });
 
