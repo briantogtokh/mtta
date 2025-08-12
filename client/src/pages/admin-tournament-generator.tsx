@@ -60,7 +60,7 @@ export default function AdminTournamentGenerator() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  
+
   const [customParticipationTypes, setCustomParticipationTypes] = useState<string[]>([]);
   const [newParticipationType, setNewParticipationType] = useState("");
   const [richDescription, setRichDescription] = useState("");
@@ -136,7 +136,18 @@ export default function AdminTournamentGenerator() {
 
   const createTournament = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('POST', '/api/tournaments', data);
+      // Fix: schedule is double-stringified
+      const payload = {
+        ...data,
+        schedule: data.schedule ? { description: data.schedule } : undefined,
+        // Fix: Rating "none" / empty strings leak to the API
+        minRating: data.minRating === "none" ? null : data.minRating,
+        maxRating: data.maxRating === "none" ? null : data.maxRating,
+        // Fix: Empty strings for optional URLs
+        backgroundImageUrl: data.backgroundImageUrl === "" ? null : data.backgroundImageUrl,
+        regulationDocumentUrl: data.regulationDocumentUrl === "" ? null : data.regulationDocumentUrl,
+      };
+      return apiRequest('POST', '/api/tournaments', payload);
     },
     onSuccess: () => {
       toast({
@@ -173,10 +184,9 @@ export default function AdminTournamentGenerator() {
       participationTypes: [...data.participationTypes, ...customParticipationTypes],
       minAge: data.minAge ?? null,
       maxAge: data.maxAge ?? null,
-      minRating: data.minRating === "none" ? null : parseInt(data.minRating) || null,
-      maxRating: data.maxRating === "none" ? null : parseInt(data.maxRating) || null,
+      // Zod will handle coercion for numbers, and the mutationFn will handle "none" and empty strings.
     };
-    
+
     createTournament.mutate(finalData);
   };
 
@@ -198,7 +208,7 @@ export default function AdminTournamentGenerator() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -261,10 +271,10 @@ export default function AdminTournamentGenerator() {
                     <FormItem>
                       <FormLabel>Товч тайлбар</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Тэмцээний товч тайлбар оруулна уу..." 
-                          className="min-h-[100px]" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Тэмцээний товч тайлбар оруулна уу..."
+                          className="min-h-[100px]"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -412,9 +422,9 @@ export default function AdminTournamentGenerator() {
                       <FormItem>
                         <FormLabel>Хамгийн их оролцогчийн тоо</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            {...field} 
+                          <Input
+                            type="number"
+                            {...field}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                         </FormControl>
@@ -430,9 +440,9 @@ export default function AdminTournamentGenerator() {
                       <FormItem>
                         <FormLabel>Оролцооны төлбөр (₮)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            {...field} 
+                          <Input
+                            type="number"
+                            {...field}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />
                         </FormControl>
@@ -577,7 +587,7 @@ export default function AdminTournamentGenerator() {
                       />
                     ))}
                   </div>
-                  
+
                   {/* Custom Participation Types */}
                   <div className="space-y-2">
                     <div className="flex gap-2">
@@ -591,7 +601,7 @@ export default function AdminTournamentGenerator() {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     {customParticipationTypes.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {customParticipationTypes.map((type) => (
@@ -710,8 +720,8 @@ export default function AdminTournamentGenerator() {
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => field.onChange(Boolean(checked))}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
@@ -728,15 +738,15 @@ export default function AdminTournamentGenerator() {
 
             {/* Submit Buttons */}
             <div className="flex gap-4 justify-end">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setLocation('/tournaments')}
               >
                 Цуцлах
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="mtta-green text-white hover:bg-mtta-green-dark"
                 disabled={createTournament.isPending}
               >
