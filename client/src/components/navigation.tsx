@@ -2,12 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Menu, X, Home, Trophy, Building, Users, Newspaper, User, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, Trophy, Building, Users, Newspaper, User, LogOut, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import mttaLogo from "@assets/logoweb_1754749015700.png";
 
@@ -35,16 +38,24 @@ export default function Navigation() {
   }, [showMobileMenu]);
 
   const navigationLinks = [
-    { 
-      href: "/about", 
-      label: "Бидний тухай", 
+    {
+      href: "/about",
+      label: "Бидний тухай",
       icon: User,
       dropdown: [
-        { href: "/about#history", label: "Танилцуулга" },
-        { href: "/about#goals", label: "Бидний зорилго" },
-        { href: "/about#management", label: "Түүхэн замнал" },
-        { href: "/about#leadership", label: "Захирлуудын зөвлөл" }
-      ]
+        {
+          href: "/about",
+          label: "Холбоо",
+          dropdown: [
+            { href: "/about#history", label: "Танилцуулга" },
+            { href: "/about#goals", label: "Бидний зорилго" },
+            { href: "/about#management", label: "Түүхэн замнал" },
+            { href: "/about#leadership", label: "Захирлуудын зөвлөл" },
+          ],
+        },
+        { href: "/branches", label: "Салбар холбоод" },
+        { href: "/national-team", label: "Үндэсний шигшээ" },
+      ],
     },
     { href: "/tournaments", label: "Тэмцээн", icon: Trophy },
     { href: "/clubs", label: "Клубууд", icon: Building },
@@ -88,15 +99,37 @@ export default function Navigation() {
                       </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="bg-gray-800 border-gray-700">
-                      {link.dropdown.map((subLink) => (
-                        <DropdownMenuItem key={subLink.href} asChild>
-                          <Link href={subLink.href}>
-                            <div className="text-white hover:text-green-400 w-full px-2 py-1">
-                              {subLink.label}
-                            </div>
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
+                      {link.dropdown.map((subLink) => {
+                        if (subLink.dropdown) {
+                          return (
+                            <DropdownMenuSub key={subLink.href}>
+                              <DropdownMenuSubTrigger className="text-white hover:text-green-400 w-full px-2 py-1">
+                                {subLink.label}
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent className="bg-gray-800 border-gray-700">
+                                {subLink.dropdown.map((innerLink) => (
+                                  <DropdownMenuItem key={innerLink.href} asChild>
+                                    <Link href={innerLink.href}>
+                                      <div className="text-white hover:text-green-400 w-full px-2 py-1">
+                                        {innerLink.label}
+                                      </div>
+                                    </Link>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                          );
+                        }
+                        return (
+                          <DropdownMenuItem key={subLink.href} asChild>
+                            <Link href={subLink.href}>
+                              <div className="text-white hover:text-green-400 w-full px-2 py-1">
+                                {subLink.label}
+                              </div>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 );
@@ -242,14 +275,30 @@ export default function Navigation() {
                       {/* Mobile submenu */}
                       <div className="bg-gray-800">
                         {link.dropdown.map((subLink) => (
-                          <Link key={subLink.href} href={subLink.href}>
-                            <div
-                              onClick={() => setShowMobileMenu(false)}
-                              className="flex items-center px-12 py-3 text-gray-300 hover:bg-gray-700 hover:text-white border-b border-gray-700"
-                            >
-                              <span className="text-sm">{subLink.label}</span>
-                            </div>
-                          </Link>
+                          <div key={subLink.href}>
+                            <Link href={subLink.href}>
+                              <div
+                                onClick={() => setShowMobileMenu(false)}
+                                className="flex items-center px-12 py-3 text-gray-300 hover:bg-gray-700 hover:text-white border-b border-gray-700"
+                              >
+                                <span className="text-sm">{subLink.label}</span>
+                              </div>
+                            </Link>
+                            {subLink.dropdown && (
+                              <div className="bg-gray-700">
+                                {subLink.dropdown.map((innerLink) => (
+                                  <Link key={innerLink.href} href={innerLink.href}>
+                                    <div
+                                      onClick={() => setShowMobileMenu(false)}
+                                      className="flex items-center px-16 py-2 text-gray-300 hover:bg-gray-600 hover:text-white border-b border-gray-600"
+                                    >
+                                      <span className="text-sm">{innerLink.label}</span>
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
