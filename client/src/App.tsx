@@ -66,7 +66,7 @@ function Router() {
           <Route path="/admin/tournaments" component={AdminTournaments} />
           <Route path="/admin/tournament/:id/results" component={AdminTournamentResults} />
           <Route path="/admin/tournament-results" component={AdminTournamentResults} />
-          <Route path="/admin/tournament-create" component={AdminTournamentGenerator} />
+          <Route path="/admin/tournament-create" component={AdminTournamentCreate} />
           <Route path="/admin/tournament/:id/manage" component={TournamentManagement} />
           <Route path="/admin/league/:id/manage" component={TournamentManagement} />
           <Route path="/excel-tournament-demo" component={ExcelTournamentDemo} />
