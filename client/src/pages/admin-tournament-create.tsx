@@ -853,7 +853,7 @@ export default function AdminTournamentCreate() {
                   <div className="space-y-3">
                     <Button
                       type="submit"
-                      className="w-full mtta-green text-white hover:bg-mtta-green-dark"
+                      className="w-full bg-mtta-green text-white hover:bg-mtta-green-dark"
                       disabled={createTournamentMutation.isPending}
                     >
                       <Save className="h-4 w-4 mr-2" />
